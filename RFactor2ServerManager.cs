@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IWshRuntimeLibrary;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -9,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using File = System.IO.File;
 
 namespace RFactor2ServerManager
 {
@@ -58,20 +60,7 @@ namespace RFactor2ServerManager
         {
             var result = RunSteamCmd("+force_install_dir " + serverDir + " +app_update 400300 +quit");
             serverInstallLbl.Text = "Exit code: " + result;
-
-            //var p = new Process
-            //{
-            //    StartInfo =
-            //    {
-            //        FileName = steamCmdDir + @"\steamcmd.exe",
-            //        WorkingDirectory = steamCmdDir,
-            //        Arguments = "+login anonymous +force_install_dir " + serverDir + " +app_update 400300 + quit"
-            //    }
-            //};
-
-            //p.Start();
-            //p.WaitForExit();
-            //serverInstallLbl.Text = "Exit code: " + p.ExitCode;
+            CreateShortcut();
         }
 
         private void UpdatePackageList()
@@ -88,7 +77,7 @@ namespace RFactor2ServerManager
             foreach (var file in Directory.GetFiles(sourceDir))
             {
                 var fileName = file.Split(@"\").Last();
-                File.Copy(file, destDir + @"\" + fileName);
+                File.Copy(file, destDir + @"\" + fileName, true); // Allow overwriting because that's how we update
             }
         }
 
@@ -132,6 +121,20 @@ namespace RFactor2ServerManager
             p.Start();
             p.WaitForExit();
             return p.ExitCode;
+        }
+
+        private void CreateShortcut()
+        {
+            WshShell shell = new WshShell();
+            string shortcutAddress = serverDir + @"\Bin64\rfactor2-dedicated-shortcut.lnk";
+            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutAddress);
+
+            shortcut.Description = "Shortcut to start server";
+            shortcut.TargetPath = serverDir + @"\Bin64\rfactor2 Dedicated.exe";
+            shortcut.WorkingDirectory = serverDir + @"\Bin64";
+            shortcut.Arguments = "+path=\"..\"";
+            
+            shortcut.Save();
         }
     }
 }
